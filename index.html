@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game - Dart</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* CSS Styles */
+        body {
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .game-container {
+            width: 80vw;
+            height: 60vh;
+            border: 2px solid white;
+            position: relative;
+            background-color: #000;
+            overflow: hidden;
+            display: none; /* Hidden until Play Now button is pressed */
+        }
+
+        .paddle {
+            position: absolute;
+            width: 10px;
+            height: 100px;
+            background-color: #fff;
+        }
+
+        .left-paddle {
+            left: 0;
+        }
+
+        .right-paddle {
+            right: 0;
+        }
+
+        .ball {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+
+        .score-board {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        /* Stick */
+        .stick {
+            width: 100px;
+            height: 10px;
+            background-color: #fff;
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Button Styles */
+        .play-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .play-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="score-board" id="scoreBoard">Left: 0 | Right: 0</div>
+    
+    <!-- Play Now Button -->
+    <button class="play-button" id="playButton">Play Now</button>
+
+    <!-- Game Container -->
+    <div class="game-container" id="gameContainer">
+        <!-- Left Paddle -->
+        <div class="paddle left-paddle" id="leftPaddle"></div>
+
+        <!-- Right Paddle -->
+        <div class="paddle right-paddle" id="rightPaddle"></div>
+
+        <!-- Ball -->
+        <div class="ball" id="ball"></div>
+
+        <!-- Stick for control -->
+        <div class="stick" id="stick"></div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="https://www.bensound.com/bensound-music/bensound-energy.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <!-- Game Logic JavaScript -->
+    <script>
+        // Get DOM elements
+        const ball = document.getElementById("ball");
+        const leftPaddle = document.getElementById("leftPaddle");
+        const rightPaddle = document.getElementById("rightPaddle");
+        const stick = document.getElementById("stick");
+        const scoreBoard = document.getElementById("scoreBoard");
+        const gameContainer = document.getElementById("gameContainer");
+        const playButton = document.getElementById("playButton");
+        const bgMusic = document.getElementById("bgMusic");
+
+        // Game variables
+        let ballX = 50; // Ball's X position (percentage)
+        let ballY = 50; // Ball's Y position (percentage)
+        let ballDx = 0.5; // Ball's X speed
+        let ballDy = 0.5; // Ball's Y speed
+
+        let leftPaddleY = 50; // Left paddle's Y position (percentage)
+        let rightPaddleY = 50; // Right paddle's Y position (percentage)
+        let stickPosition = 50; // Stick's X position (percentage)
+
+        let leftScore = 0; // Left Player's score
+        let rightScore = 0; // Right Player's score
+
+        const paddleSpeed = 5;
+        const ballSpeed = 0.5;
+        const stickSpeed = 2; // Speed for controlling stick
+
+        // Initialize game
+        function initGame() {
+            playButton.style.display = "none"; // Hide play button after starting
+            gameContainer.style.display = "block"; // Show the game container
+            bgMusic.play(); // Start background music
+            ballX = 50;
+            ballY = 50;
+            ballDx = 0.5;
+            ballDy = 0.5;
+            leftPaddleY = 50;
+            rightPaddleY = 50;
+            stickPosition = 50;
+            leftScore = 0;
+            rightScore = 0;
+            scoreBoard.innerText = `Left: ${leftScore} | Right: ${rightScore}`;
+            gameLoop(); // Start the game loop
+        }
+
+        // Start the game when "Play Now" button is pressed
+        playButton.addEventListener("click", initGame);
+
+        // Game Loop
+        function gameLoop() {
+            // Update Ball Position
+            ballX += ballDx;
+            ballY += ballDy;
+
+            // Ball Collisions
+            if (ballY <= 0 || ballY >= 100) {
+                ballDy = -ballDy; // Ball hits top or bottom wall
+            }
+
+            // Ball-Stick Collision (Left Stick)
+            if (ballX <= 5 && ballY >= stickPosition && ballY <= stickPosition + 10) {
+                ballDx = -ballDx;
+            }
+
+            // Ball-Paddle Collision (Right Paddle)
+            if (ballX >= 95 && ballY >= rightPaddleY && ballY <= rightPaddleY + 20) {
+                ballDx = -ballDx;
+            }
+
+            // Ball goes out of bounds (Scoring)
+            if (ballX <= 0) {
+                rightScore++;
+                resetBall();
+            } else if (ballX >= 100) {
+                leftScore++;
+                resetBall();
+            }
+
+            // Update Ball and Paddle Position in the DOM
+            ball.style.left = ballX + "%";
+            ball.style.top = ballY + "%";
+
+            leftPaddle.style.top = leftPaddleY + "%";
+            rightPaddle.style.top = rightPaddleY + "%";
+
+            stick.style.left = stickPosition + "%";
+
+            // Update the Score Board
+            scoreBoard.innerText = `Left: ${leftScore} | Right: ${rightScore}`;
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Reset Ball to Center after Scoring
+        function resetBall() {
+            ballX = 50;
+            ballY = 50;
+            ballDx = -ballDx; // Change direction after scoring
+        }
+
+        // Move Stick with mouse or touch input
+        document.addEventListener("mousemove", (e) => {
+            let containerRect = gameContainer.getBoundingClientRect();
+            let mouseX = (e.clientX - containerRect.left) / containerRect.width * 100;
+            stickPosition = Math.min(Math.max(mouseX, 5), 95); // Keep stick within bounds
+        });
+
+        // Left Paddle Control with W/S keys
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "w" && leftPaddleY > 0) {
+                leftPaddleY -= paddleSpeed;
+            }
+            if (e.key === "s" && leftPaddleY < 80) {
+                leftPaddleY += paddleSpeed;
+            }
+        });
+
+        // Right Paddle Control with Arrow keys
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowUp" && rightPaddleY > 0) {
+                rightPaddleY -= paddleSpeed;
+            }
+            if (e.key === "ArrowDown" && rightPaddleY < 80) {
+                rightPaddleY += paddleSpeed;
+            }
+        });
+    </script>
+</body>
+</html>
